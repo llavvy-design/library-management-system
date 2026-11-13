@@ -1,4 +1,3 @@
-
 # Library Management System
 
 A database-driven Library Management System backend built with NestJS, TypeScript, Prisma ORM 7 and PostgreSQL hosted on Neon.
@@ -1090,6 +1089,15 @@ Planned development areas include:
 - Add API documentation.
 - Introduce automated integration tests.
 
+### Prisma vs. Document Database Modelling
+
+One difference I noticed when modelling this library database is how relationships are represented.
+
+With Prisma and PostgreSQL, I define separate models and explicitly establish relationships using foreign keys...For example, Book references Genre through genreId.
+
+In a document database, related information can instead be embedded within a document thus reducing the need for separate lookups but may introduce data duplication.
+
+For this library catalogue, separating Genre from Book provides better consistency and allows PostgreSQL to enforce referential integrity.
 
 ---
 
