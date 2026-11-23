@@ -1,12 +1,41 @@
 
 import "dotenv/config";
+import { hash } from "bcrypt";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "../src/generated/prisma/client.js";
+import { PrismaClient, Role } from "../src/generated/prisma/client.js";
 
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
   throw new Error("DATABASE_URL is not configured.");
+}
+
+const librarianNameValue = process.env.LIBRARIAN_NAME?.trim();
+const librarianEmailValue = process.env.LIBRARIAN_EMAIL
+  ?.trim()
+  .toLowerCase();
+const librarianPasswordValue = process.env.LIBRARIAN_PASSWORD;
+
+if (
+  !librarianNameValue ||
+  !librarianEmailValue ||
+  !librarianPasswordValue
+) {
+  throw new Error(
+    "LIBRARIAN_NAME, LIBRARIAN_EMAIL and LIBRARIAN_PASSWORD must be configured.",
+  );
+}
+
+const librarianName: string = librarianNameValue;
+const librarianEmail: string = librarianEmailValue;
+const librarianPassword: string = librarianPasswordValue;
+
+if (Buffer.byteLength(librarianPassword, "utf8") < 8) {
+  throw new Error("Librarian password must contain at least 8 bytes.");
+}
+
+if (Buffer.byteLength(librarianPassword, "utf8") > 72) {
+  throw new Error("Librarian password cannot exceed 72 bytes.");
 }
 
 const adapter = new PrismaNeon({
@@ -51,7 +80,7 @@ const books = [
   },
   {
     title: "Weep Not, Child",
-    author: "Ngũgĩ wa Thiong'o",
+    author: "NgÅ©gÄ© wa Thiong'o",
     isbn: "9789966460011",
     totalCopies: 8,
     availableCopies: 5,
@@ -59,7 +88,7 @@ const books = [
   },
   {
     title: "The River Between",
-    author: "Ngũgĩ wa Thiong'o",
+    author: "NgÅ©gÄ© wa Thiong'o",
     isbn: "9789966460028",
     totalCopies: 10,
     availableCopies: 7,
@@ -67,7 +96,7 @@ const books = [
   },
   {
     title: "A Grain of Wheat",
-    author: "Ngũgĩ wa Thiong'o",
+    author: "NgÅ©gÄ© wa Thiong'o",
     isbn: "9780141186993",
     totalCopies: 7,
     availableCopies: 4,
@@ -213,6 +242,27 @@ const books = [
 
 async function main(): Promise<void> {
   await prisma.$connect();
+
+  const passwordHash: string = await hash(librarianPassword, 12);
+
+  await prisma.user.upsert({
+    where: {
+      email: librarianEmail,
+    },
+    update: {
+      name: librarianName,
+      passwordHash,
+      role: Role.LIBRARIAN,
+    },
+    create: {
+      name: librarianName,
+      email: librarianEmail,
+      passwordHash,
+      role: Role.LIBRARIAN,
+    },
+  });
+
+  console.log("Librarian account seeded successfully.");
 
   const genreIds = new Map<string, number>();
 
