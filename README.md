@@ -1,393 +1,271 @@
 # Library Management System
 
-A database-driven Library Management System backend built with NestJS, TypeScript, Prisma ORM 7 and PostgreSQL hosted on Neon.
+A backend REST API for managing a library catalogue, genres, user
+accounts, and book inventory. Built with **NestJS**, **TypeScript**,
+**Prisma ORM 7**, and **PostgreSQL** hosted on **Neon**.
 
-The project establishes a modular backend foundation and a relational database for managing library books, genres, users and book inventory.
+The current implementation includes book and genre CRUD operations,
+catalogue search and pagination, patron registration and login, JWT
+authentication, and librarian-only authorization for book write
+operations.
 
----
+> **Status:** Catalogue API, authentication, and librarian authorization
+> are implemented and manually verified. Borrowing, returns, and the
+> frontend are planned future development.
+
+------------------------------------------------------------------------
 
 ## Table of Contents
 
-- [1. Project Overview](#1-project-overview)
-- [2. Project Objectives](#2-project-objectives)
-- [3. Technology Stack](#3-technology-stack)
-- [4. System Architecture](#4-system-architecture)
-- [5. Project Structure](#5-project-structure)
-- [6. Database Design](#6-database-design)
-- [7. Schema Decisions](#7-schema-decisions)
-- [8. Entity Relationship Diagram](#8-entity-relationship-diagram)
-- [9. Data Models](#9-data-models)
-- [10. Database Constraints and Integrity](#10-database-constraints-and-integrity)
-- [11. Getting Started](#11-getting-started)
-- [12. Environment Configuration](#12-environment-configuration)
-- [13. Prisma Configuration](#13-prisma-configuration)
-- [14. Database Migrations](#14-database-migrations)
-- [15. Database Seeding](#15-database-seeding)
-- [16. Running the Application](#16-running-the-application)
-- [17. Verification and Testing](#17-verification-and-testing)
-- [18. Security Considerations](#18-security-considerations)
-- [19. Current Implementation Status](#19-current-implementation-status)
-- [20. Future Development](#20-future-development)
-- [21. Learning Resources](#21-learning-resources)
+1.  [Project Overview](#1-project-overview)
+2.  [Features](#2-features)
+3.  [Technology Stack](#3-technology-stack)
+4.  [Architecture](#4-architecture)
+5.  [Repository Structure](#5-repository-structure)
+6.  [Database Design](#6-database-design)
+7.  [Getting Started](#7-getting-started)
+8.  [Environment Configuration](#8-environment-configuration)
+9.  [Database Setup](#9-database-setup)
+10. [Running the API](#10-running-the-api)
+11. [API Reference](#11-api-reference)
+12. [Authentication and
+    Authorization](#12-authentication-and-authorization)
+13. [Postman Collection](#13-postman-collection)
+14. [Validation and Error Handling](#14-validation-and-error-handling)
+15. [Testing and Verification](#15-testing-and-verification)
+16. [Security Notes](#16-security-notes)
+17. [Current Implementation Status](#17-current-implementation-status)
+18. [Planned Development](#18-planned-development)
+19. [Design Decisions](#19-design-decisions)
+20. [Learning Resources](#20-learning-resources)
+21. [Author and Repository](#21-author-and-repository)
 
----
+------------------------------------------------------------------------
 
 ## 1. Project Overview
 
-The Library Management System is a backend engineering project developed as part of a Full Stack Engineering specialization.
+The Library Management System is a backend engineering project developed
+as part of a Full Stack Software Engineering learning programme.
 
-The application is designed to provide a structured foundation for managing library catalogues and related information through a relational database.
+It provides a structured API for managing a library's book catalogue and
+genre classifications. It also supports user registration and login,
+token-based authentication, and role-based access control for selected
+operations.
 
-The current implementation focuses on establishing a reliable backend environment, designing the library database schema, configuring database connectivity and populating the database with initial catalogue records.
+The backend follows NestJS's modular architecture. Controllers expose
+HTTP endpoints, services contain application logic, DTOs validate
+incoming data, and a shared Prisma service provides database access.
 
-The project uses NestJS as its backend framework, Prisma ORM as its database toolkit and Neon as its hosted PostgreSQL database provider.
+### Project information
 
-The initial data layer supports three primary entities:
+  Attribute              Details
+  ---------------------- --------------------------------------
+  Project name           Library Management System
+  Repository             `library-management-system`
+  Application type       Backend REST API
+  Framework              NestJS
+  Language               TypeScript
+  ORM                    Prisma ORM 7
+  Database               PostgreSQL
+  Hosting                Neon
+  Development database   `neondb` on the `development` branch
+  Authentication         JWT bearer tokens
+  Password hashing       bcrypt
+  Authorization          Role-based access control
+  Default API port       `3000`
 
-- **Book:** Represents individual books within the library catalogue.
-- **Genre:** Categorizes books according to their literary classification.
-- **User:** Represents individuals who interact with the library system.
+## 2. Features
 
-User roles are controlled through a PostgreSQL enum containing `PATRON` and `LIBRARIAN`.
+### Book catalogue
 
-### Project Information
+-   Create, retrieve, update, and delete book records.
+-   Retrieve a book by ID.
+-   Search books by title or author (case-insensitive).
+-   Filter books by genre.
+-   Paginate results using `page` and `limit`.
+-   Include related genre information in book responses.
+-   Track total and available copies.
+-   Initialize available copies from total copies when creating a book.
+-   Synchronize available copies when `totalCopies` is updated.
 
-| Attribute | Details |
-|---|---|
-| Project Name | Library Management System |
-| Repository | library-management-system |
-| Application Type | Backend REST API |
-| Backend Framework | NestJS |
-| Programming Language | TypeScript |
-| ORM | Prisma ORM 7 |
-| Database | PostgreSQL |
-| Database Hosting | Neon |
-| Database Development Branch | development |
-| Database Name | neondb |
-| Architecture | Modular backend architecture |
-| Initial Data | 5 genres and 21 books |
-| Development Status | Database foundation implemented |
+### Genre management
 
----
+-   Create, retrieve, update, and delete genres.
+-   Include the number of associated books in genre responses.
+-   Prevent deletion of a genre while books still reference it.
 
-## 2. Project Objectives
+### Authentication
 
-The main objectives of this project are to:
+-   Register patron accounts.
+-   Log in using email and password.
+-   Hash passwords using bcrypt before storing them.
+-   Issue signed JWT access tokens after successful login.
+-   Validate bearer tokens on protected routes.
+-   Return safe user information without exposing password hashes.
 
-1. Establish a NestJS backend application using TypeScript.
-2. Understand how NestJS extends Node.js application development through its modular architecture and dependency injection system.
-3. Provision and connect a hosted PostgreSQL database.
-4. Integrate Prisma ORM with NestJS using a PostgreSQL-compatible driver adapter.
-5. Design relational database models for books, genres and users.
-6. Implement a Role enum containing PATRON and LIBRARIAN.
-7. Establish a one-to-many relationship between Genre and Book.
-8. Apply database schema changes using Prisma Migrate.
-9. Populate the database with an initial library catalogue.
-10. Document database architecture, relationships and schema decisions.
-11. Establish a maintainable foundation for subsequent CRUD functionality.
+### Authorization
 
----
+-   Define `PATRON` and `LIBRARIAN` roles.
+-   Restrict book creation, updating, and deletion to authenticated
+    librarians.
+-   Reject unauthenticated requests to protected book write routes.
+-   Reject patrons attempting librarian-only operations.
+
+### Developer support
+
+-   Prisma migrations and database seeding.
+-   Environment-based database and JWT configuration.
+-   Global request validation and CORS configuration.
+-   Importable Postman collection.
 
 ## 3. Technology Stack
 
-### Backend
+  Technology                Purpose
+  ------------------------- --------------------------------------
+  Node.js                   JavaScript runtime
+  TypeScript                Typed application development
+  NestJS                    Backend framework
+  Express                   HTTP platform used by NestJS
+  PostgreSQL                Relational database
+  Neon                      Hosted PostgreSQL
+  Prisma ORM 7              Schema modelling and database access
+  Prisma Client             Generated type-safe database client
+  PrismaNeon adapter        Connects Prisma Client to Neon
+  Prisma Migrate            Database migration management
+  bcrypt                    Password hashing
+  Passport / Passport JWT   Authentication strategy integration
+  `@nestjs/jwt`             JWT signing and verification
+  `class-validator`         DTO validation
+  `class-transformer`       Request transformation
+  Postman                   API testing
+  Git / GitHub              Version control and source hosting
 
-| Technology | Purpose |
-|---|---|
-| Node.js | JavaScript runtime environment |
-| TypeScript | Statically typed application development |
-| NestJS | Modular Node.js backend framework |
-| NestJS CLI | Application scaffolding and code generation |
-| Express | HTTP platform used by NestJS |
+## 4. Architecture
 
-### Database and Data Access
+The application uses a modular, layered backend structure.
 
-| Technology | Purpose |
-|---|---|
-| PostgreSQL | Relational database management system |
-| Neon | Hosted serverless PostgreSQL platform |
-| Prisma ORM 7 | Database schema modelling and data access |
-| Prisma Client | Generated type-safe database client |
-| PrismaNeon | Driver adapter connecting Prisma Client to Neon |
-| Prisma Migrate | Database schema migration management |
-| Prisma Studio | Graphical database exploration tool |
-
-### Development Tools
-
-| Tool | Purpose |
-|---|---|
-| Visual Studio Code | Source code editing |
-| Git | Version control |
-| GitHub | Source code hosting |
-| npm | Package management |
-| tsx | Execution of TypeScript scripts |
-| dotenv | Environment variable loading |
-| Vitest | Application testing |
-| Oxlint | Static code analysis |
-| Prettier | Code formatting |
-
----
-
-## 4. System Architecture
-
-The project follows a modular backend architecture.
-
-NestJS organizes application functionality into modules, controllers and providers.
-
-The database layer is separated from HTTP request handling to improve maintainability and reusability.
-
-### Database Interaction Flow
-
-```mermaid
+``` mermaid
 flowchart TD
-    A[HTTP Client] --> B[NestJS Application]
-    B --> C[Controller]
-    C --> D[Application Service]
-    D --> E[PrismaService]
-    E --> F[Prisma Client]
-    F --> G[PrismaNeon Driver Adapter]
-    G --> H[Neon PostgreSQL]
+    Client[API Client / Postman] --> Nest[NestJS Application]
+    Nest --> Controller[Controller]
+    Controller --> Guards[Authentication and Role Guards]
+    Guards --> Service[Feature Service]
+    Service --> PrismaService[PrismaService]
+    PrismaService --> Client2[Generated Prisma Client]
+    Client2 --> Adapter[PrismaNeon Driver Adapter]
+    Adapter --> Database[(Neon PostgreSQL)]
 ```
 
-### Architecture Components
+### Main components
 
-**NestJS Application**
+-   **Controllers:** Define HTTP routes, receive request data, and
+    return responses.
+-   **DTOs:** Define and validate incoming request data.
+-   **Services:** Implement application logic and database operations.
+-   **Modules:** Group related controllers and providers.
+-   **Guards:** Protect routes using authentication and role checks.
+-   **PrismaService:** Provides a shared Prisma Client through NestJS
+    dependency injection.
+-   **PrismaModule:** Registers and exports the database service.
+-   **PrismaNeon adapter:** Connects Prisma Client to Neon PostgreSQL.
 
-The main application environment responsible for handling HTTP requests and coordinating application modules.
+### Feature modules
 
-**Controllers**
+  -----------------------------------------------------------------------
+  Module                              Responsibility
+  ----------------------------------- -----------------------------------
+  `PrismaModule`                      Shared database access
 
-Controllers define application routes and handle incoming HTTP requests.
+  `AuthModule`                        Registration, login, JWT strategy,
+                                      and authorization components
 
-**Services**
+  `BooksModule`                       Book catalogue endpoints and
+                                      business logic
 
-Services contain application logic and coordinate operations between controllers and the database layer.
+  `GenresModule`                      Genre management endpoints and
+                                      business logic
+  -----------------------------------------------------------------------
 
-**PrismaService**
+## 5. Repository Structure
 
-PrismaService extends the generated PrismaClient and provides reusable database access through NestJS Dependency Injection.
-
-**PrismaModule**
-
-Registers and exports PrismaService so that other application modules can access database functionality.
-
-**Prisma Client**
-
-Provides generated, type-safe database operations based on the Prisma schema.
-
-**PrismaNeon Adapter**
-
-Connects Prisma Client to the Neon PostgreSQL database using the Neon serverless driver.
-
----
-
-## 5. Project Structure
-
-The repository is organized into a root project directory and an API application directory.
-
-```text
+``` text
 library-management-system/
 │
 ├── .gitignore
 ├── README.md
 │
+├── docs/
+│   └── postman_collection.json
+│
 └── api/
-    │
     ├── prisma/
     │   ├── migrations/
-    │   │   └── 20261113105220_init/
+    │   │   ├── 20261113105220_init/
+    │   │   │   └── migration.sql
+    │   │   └── 20261120195053_add_user_password_hash/
     │   │       └── migration.sql
-    │   │
     │   ├── schema.prisma
     │   └── seed.ts
     │
     ├── src/
+    │   ├── auth/
+    │   │   ├── dto/
+    │   │   │   ├── login.dto.ts
+    │   │   │   └── register.dto.ts
+    │   │   ├── auth.controller.ts
+    │   │   ├── auth.module.ts
+    │   │   ├── auth.service.ts
+    │   │   ├── jwt-auth.guard.ts
+    │   │   ├── jwt.strategy.ts
+    │   │   ├── roles.decorator.ts
+    │   │   └── roles.guard.ts
     │   │
-    │   ├── generated/
-    │   │   └── prisma/
+    │   ├── books/
+    │   │   ├── dto/
+    │   │   │   ├── create-book.dto.ts
+    │   │   │   ├── get-books-query.dto.ts
+    │   │   │   └── update-book.dto.ts
+    │   │   ├── books.controller.ts
+    │   │   ├── books.module.ts
+    │   │   └── books.service.ts
+    │   │
+    │   ├── genres/
+    │   │   ├── dto/
+    │   │   │   ├── create-genre.dto.ts
+    │   │   │   └── update-genre.dto.ts
+    │   │   ├── genres.controller.ts
+    │   │   ├── genres.module.ts
+    │   │   └── genres.service.ts
     │   │
     │   ├── prisma/
     │   │   ├── prisma.module.ts
     │   │   └── prisma.service.ts
     │   │
-    │   ├── app.controller.ts
     │   ├── app.module.ts
-    │   ├── app.service.ts
     │   └── main.ts
     │
     ├── test/
-    │
-    ├── .env
     ├── .env.example
-    ├── .gitignore
     ├── package.json
     ├── package-lock.json
     └── prisma7.config.ts
 ```
 
-### Important Directories and Files
-
-| Path | Responsibility |
-|---|---|
-| `api/src/` | Main NestJS application source code |
-| `api/src/prisma/` | Prisma service and module integration |
-| `api/src/generated/prisma/` | Generated Prisma Client |
-| `api/prisma/` | Database schema, migrations and seed script |
-| `api/prisma/migrations/` | Version-controlled database migration history |
-| `api/prisma/schema.prisma` | Database models, fields and relationships |
-| `api/prisma/seed.ts` | Initial library catalogue population |
-| `api/prisma7.config.ts` | Prisma CLI and migration configuration |
-| `api/.env` | Local database connection credentials |
-| `api/.env.example` | Environment configuration template |
-| `api/src/main.ts` | NestJS application entry point |
-| `api/src/app.module.ts` | Root application module |
-
-The `generated/prisma` directory is generated from the Prisma schema and is excluded from Git version control.
-
----
+Prisma Client is generated under `api/src/generated/prisma/`. Generated
+output and installed dependencies are not committed.
 
 ## 6. Database Design
 
-The database uses PostgreSQL as its relational database management system.
+The current relational database contains three models and one enum:
 
-The initial schema consists of three principal models:
+-   `User`
+-   `Genre`
+-   `Book`
+-   `Role`
 
-1. User
-2. Genre
-3. Book
+### Entity relationship diagram
 
-It also contains a PostgreSQL enum named Role.
-
-### Database Overview
-
-| Model | Responsibility |
-|---|---|
-| User | Stores library user information and roles |
-| Genre | Stores book classification categories |
-| Book | Stores book catalogue and inventory information |
-| Role | Defines permitted user role values |
-
-### Database Relationships
-
-The database implements a one-to-many relationship between Genre and Book.
-
-A genre can contain multiple books, while each book belongs to exactly one genre.
-
-A User record is independent in the current schema and does not yet have a foreign key relationship with another model.
-
----
-
-## 7. Schema Decisions
-
-### Why does Book reference Genre instead of embedding it?
-
-The Book model references the Genre model through a foreign key named `genreId` rather than storing genre information directly inside every Book record.
-
-This is a deliberate relational database design decision.
-
-A library can contain many books belonging to the same genre. Storing the genre name separately inside every book would introduce unnecessary data duplication.
-
-For example, consider a library containing three books in the Fantasy genre.
-
-An embedded approach could store:
-
-| Book | Genre |
-|---|---|
-| A Game of Thrones | Fantasy |
-| The Name of the Wind | Fantasy |
-| The Golden Compass | Fantasy |
-
-The genre name would be repeated in every book record.
-
-Our relational design instead stores the genre once in the Genre table and uses its primary key to associate books with it.
-
-### Advantages of this design
-
-**1. Reduced data duplication**
-
-A genre name is stored once and referenced by multiple books.
-
-If the genre name changes, the change is made in one record rather than across every associated book.
-
-**2. Referential integrity**
-
-The foreign key ensures that a book cannot reference a genre that does not exist.
-
-PostgreSQL enforces this relationship at the database level.
-
-**3. Easier maintenance**
-
-Genre information can be created, updated and retrieved independently of the books associated with it.
-
-**4. Flexible querying**
-
-The relationship allows the application to retrieve individual books, all books belonging to a genre or genre information alongside book details.
-
-**5. Database normalization**
-
-Separating genres from books reduces repeated information and supports a more maintainable relational structure.
-
-### Why is the relationship one-to-many?
-
-The relationship is represented as:
-
-`Genre (1) → Book (Many)`
-
-One genre may have several books, but each book has one required genre.
-
-In Prisma, the relationship is defined using:
-
-```prisma
-model Genre {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  slug  String @unique
-  books Book[]
-}
-
-model Book {
-  id      Int    @id @default(autoincrement())
-  title   String
-  genreId Int
-  genre   Genre  @relation(fields: [genreId], references: [id])
-}
-```
-
-The `genreId` field is the actual foreign key column.
-
-The `books` and `genre` fields define the Prisma relationship and provide convenient navigation between related records.
-
-### Why use a Role enum?
-
-The Role enum restricts user roles to a predefined set of permitted values.
-
-The current values are:
-
-- `PATRON`
-- `LIBRARIAN`
-
-This prevents arbitrary role values from being inserted into the database.
-
-### Why use unique constraints?
-
-Unique constraints prevent duplicate values in fields that identify records.
-
-The schema enforces uniqueness for:
-
-- User email addresses.
-- Genre names.
-- Genre slugs.
-- Book ISBNs.
-
-These constraints are enforced by PostgreSQL rather than relying solely on application-level validation.
-
----
-
-## 8. Entity Relationship Diagram
-
-The following diagram represents the current database structure.
-
-```mermaid
+``` mermaid
 erDiagram
     Genre ||--o{ Book : categorizes
 
@@ -395,6 +273,7 @@ erDiagram
         int id PK
         string name
         string email UK
+        string passwordHash
         Role role
         datetime createdAt
         datetime updatedAt
@@ -419,729 +298,924 @@ erDiagram
         datetime createdAt
         datetime updatedAt
     }
-
 ```
 
-### Relationship Explanation
+### User model
 
-| Relationship | Type | Description |
-|---|---|---|
-| Genre to Book | One-to-many | One genre can contain multiple books |
-| Book to Genre | Many-to-one | Each book references one genre |
-| Role to User | Enum assignment | Each user has one permitted role |
+  -----------------------------------------------------------------------
+  Field                   Type                    Description
+  ----------------------- ----------------------- -----------------------
+  `id`                    `Int`                   Auto-incrementing
+                                                  primary key
 
-The current schema uses `onDelete: Restrict` for the Book-to-Genre relationship.
+  `name`                  `String`                User's name
 
-This prevents deletion of a genre while books still reference it.
+  `email`                 `String`                Unique email address
 
-The relationship uses `onUpdate: Cascade` so that changes to the referenced genre identifier propagate to associated books.
+  `passwordHash`          `String?`               Bcrypt password hash;
+                                                  nullable in current
+                                                  schema
 
----
+  `role`                  `Role`                  User role; defaults to
+                                                  `PATRON`
 
-## 9. Data Models
+  `createdAt`             `DateTime`              Creation timestamp
 
-### 9.1 User Model
+  `updatedAt`             `DateTime`              Last update timestamp
+  -----------------------------------------------------------------------
 
-The User model represents individuals who interact with the library.
+`passwordHash` is nullable to accommodate existing records during the
+schema migration. The registration flow stores a hash for newly
+registered patrons.
 
-| Field | Type | Description |
-|---|---|---|
-| id | Int | Primary key |
-| name | String | User's name |
-| email | String | Unique email address |
-| role | Role | User role |
-| createdAt | DateTime | Record creation timestamp |
-| updatedAt | DateTime | Last modification timestamp |
+### Genre model
 
-The role field defaults to `PATRON`.
+  Field         Type         Description
+  ------------- ------------ --------------------------------
+  `id`          `Int`        Auto-incrementing primary key
+  `name`        `String`     Unique genre name
+  `slug`        `String`     Unique URL-friendly identifier
+  `books`       `Book[]`     Related books
+  `createdAt`   `DateTime`   Creation timestamp
+  `updatedAt`   `DateTime`   Last update timestamp
 
-The schema provides the foundation for distinguishing patrons from librarians.
+### Book model
 
-Authentication and password management are not yet implemented.
+  Field               Type         Description
+  ------------------- ------------ -------------------------------
+  `id`                `Int`        Auto-incrementing primary key
+  `title`             `String`     Book title
+  `author`            `String`     Author
+  `isbn`              `String`     Unique ISBN
+  `totalCopies`       `Int`        Total copies owned
+  `availableCopies`   `Int`        Copies recorded as available
+  `genreId`           `Int`        Foreign key to `Genre`
+  `genre`             `Genre`      Related genre
+  `createdAt`         `DateTime`   Creation timestamp
+  `updatedAt`         `DateTime`   Last update timestamp
 
-### 9.2 Genre Model
+### Role enum
 
-The Genre model stores the categories used to classify library books.
+``` prisma
+enum Role {
+  PATRON
+  LIBRARIAN
+}
+```
 
-| Field | Type | Description |
-|---|---|---|
-| id | Int | Primary key |
-| name | String | Unique genre name |
-| slug | String | Unique URL-friendly identifier |
-| books | Book[] | Related books |
-| createdAt | DateTime | Record creation timestamp |
-| updatedAt | DateTime | Last modification timestamp |
+New users default to `PATRON`. The seed script creates or updates the
+configured librarian account with the `LIBRARIAN` role.
 
-The `books` field represents the collection of books associated with a genre.
+### Relationships and constraints
 
-### 9.3 Book Model
+A genre can contain many books, while each book belongs to one required
+genre:
 
-The Book model stores information about books available in the library catalogue.
+``` text
+Genre (1) ──────────── (Many) Book
+```
 
-| Field | Type | Description |
-|---|---|---|
-| id | Int | Primary key |
-| title | String | Book title |
-| author | String | Book author |
-| isbn | String | Unique ISBN |
-| totalCopies | Int | Total number of copies |
-| availableCopies | Int | Number of available copies |
-| genreId | Int | Foreign key referencing Genre |
-| genre | Genre | Related genre |
-| createdAt | DateTime | Record creation timestamp |
-| updatedAt | DateTime | Last modification timestamp |
+`Book.genreId` references `Genre.id`. The `User` model is currently
+independent; borrowing records and user-to-book relationships have not
+yet been implemented.
 
-The inventory fields default to one copy when a record is created without explicitly provided quantities.
+  -----------------------------------------------------------------------
+  Constraint                          Purpose
+  ----------------------------------- -----------------------------------
+  Primary keys                        Uniquely identify records
 
----
+  Unique user email                   Prevents duplicate accounts
 
-## 10. Database Constraints and Integrity
+  Unique genre name and slug          Prevents duplicate genre
+                                      identifiers
 
-The database uses several constraints to preserve data consistency.
+  Unique book ISBN                    Prevents duplicate ISBNs
 
-| Constraint | Implementation | Purpose |
-|---|---|---|
-| Primary Key | `@id` | Uniquely identifies each record |
-| Auto Increment | `@default(autoincrement())` | Generates numeric identifiers |
-| Unique Email | `@unique` | Prevents duplicate user emails |
-| Unique Genre Name | `@unique` | Prevents duplicate genre names |
-| Unique Genre Slug | `@unique` | Prevents duplicate genre slugs |
-| Unique ISBN | `@unique` | Prevents duplicate book ISBNs |
-| Foreign Key | `@relation` | Enforces the Book–Genre relationship |
-| Index | `@@index([genreId])` | Supports queries filtering by genre |
-| Default Role | `@default(PATRON)` | Provides a default user role |
-| Default Timestamp | `@default(now())` | Records creation time |
-| Updated Timestamp | `@updatedAt` | Tracks record modifications |
+  Book-to-Genre foreign key           Ensures each book references an
+                                      existing genre
 
-The Book model also uses a database index on `genreId`.
+  `@@index([genreId])`                Supports genre filtering
 
-Application-level validation will be responsible for enforcing inventory rules such as preventing available copies from exceeding total copies.
+  `onDelete: Restrict`                Prevents deleting a genre that
+                                      still has books
 
----
+  `onUpdate: Cascade`                 Propagates changes to the
+                                      referenced genre identifier
 
-## 11. Getting Started
+  Default role                        Assigns `PATRON` when no role is
+                                      supplied
+  -----------------------------------------------------------------------
+
+## 7. Getting Started
 
 ### Prerequisites
 
-Before running the application, ensure that the following tools are installed:
+  Tool           Requirement
+  -------------- -------------------------------------------
+  Node.js        24.x recommended; developed with v24.22.2
+  npm            11.x used during development
+  Git            Required to clone the repository
+  Neon account   Hosted PostgreSQL database
+  Postman        Recommended for API testing
 
-| Tool | Requirement |
-|---|---|
-| Node.js | Node.js 24.x |
-| npm | Compatible npm version |
-| Git | Installed and configured |
-| Visual Studio Code | Recommended code editor |
-| Neon account | Hosted PostgreSQL database |
+### 1. Clone the repository
 
-The project uses Node.js v24.22.2 and npm 11 during development.
-
-### Step 1: Clone the repository
-
-```bash
+``` bash
 git clone https://github.com/llavvy-design/library-management-system.git
 ```
 
-Navigate into the repository:
+### 2. Open the project
 
-```bash
+``` bash
 cd library-management-system
 ```
 
-### Step 2: Enter the API directory
+### 3. Enter the API directory
 
-```bash
+``` bash
 cd api
 ```
 
-### Step 3: Install dependencies
+### 4. Install dependencies
 
-```bash
-npm install
+``` powershell
+npm.cmd install
 ```
 
-This installs the dependencies defined in `package.json` and `package-lock.json`.
+On Windows PowerShell, `npm.cmd` and `npx.cmd` can be used if the
+execution policy blocks the `.ps1` wrappers.
 
-### Step 4: Create the environment file
+### 5. Create the local environment file
 
-On Windows PowerShell:
+Run from `api/`:
 
-```powershell
+``` powershell
 Copy-Item .env.example .env
 ```
 
-Open the new `.env` file and configure the PostgreSQL connection strings.
+Configure the new `api/.env` file as described in the next section.
 
-### Step 5: Generate Prisma Client
+### 6. Generate Prisma Client
 
-```bash
-npx prisma generate
+``` powershell
+npx.cmd prisma generate
 ```
 
-This generates the TypeScript database client using the models defined in `prisma/schema.prisma`.
+## 8. Environment Configuration
 
+The API reads local environment variables from `api/.env`. Do not commit
+this file or share its secrets.
 
-**On Windows PowerShell, use `npm.cmd` and `npx.cmd` instead of `npm` and `npx` when the local execution policy prevents PowerShell from running the `npm .ps1` wrappers**
+### Required variables
 
----
+  -----------------------------------------------------------------------
+  Variable                            Purpose
+  ----------------------------------- -----------------------------------
+  `DATABASE_URL`                      Pooled Neon connection used by the
+                                      running NestJS application
 
-## 12. Environment Configuration
+  `DATABASE_URL_UNPOOLED`             Direct Neon connection used by
+                                      Prisma CLI operations
 
-The application requires environment variables to connect to the hosted PostgreSQL database.
+  `JWT_SECRET`                        Secret used to sign and verify JWTs
 
-The environment variables are stored locally in:
+  `LIBRARIAN_NAME`                    Name for the seeded librarian
 
-`api/.env`
+  `LIBRARIAN_EMAIL`                   Email for the seeded librarian
 
-### Required Variables
+  `LIBRARIAN_PASSWORD`                Initial password for the seeded
+                                      librarian
+  -----------------------------------------------------------------------
 
-| Variable | Purpose |
-|---|---|
-| DATABASE_URL | Pooled Neon PostgreSQL connection |
-| DATABASE_URL_UNPOOLED | Direct Neon PostgreSQL connection |
+### Example `.env` structure
 
-### Example Configuration
+Replace every placeholder with values from your own environment:
 
-```dotenv
+``` dotenv
 DATABASE_URL="postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require"
 DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@HOST/DBNAME?sslmode=require"
+
+JWT_SECRET="replace-with-a-long-random-secret"
+
+LIBRARIAN_NAME="Library Administrator"
+LIBRARIAN_EMAIL="librarian@example.com"
+LIBRARIAN_PASSWORD="replace-with-a-strong-password"
 ```
 
-These values are placeholders.
+These are examples, not working credentials.
 
-Replace them with the connection strings generated by your Neon project.
+### Connection strings
 
-### Connection Types
+-   `DATABASE_URL` should use the Neon pooled connection endpoint.
+-   `DATABASE_URL_UNPOOLED` should use the direct connection endpoint.
+-   The pooled hostname commonly contains `-pooler`.
+-   The NestJS Prisma service reads the pooled URL.
+-   Prisma CLI operations use the direct URL configured in
+    `prisma7.config.ts`.
 
-**Pooled Connection**
+### Librarian account
 
-`DATABASE_URL` uses the Neon pooled connection endpoint.
+The seed script reads the librarian name, email, and password from
+environment variables. It normalizes the email and hashes the password
+with bcrypt before storing it. Use those configured credentials to log
+in as a librarian. Never place real credentials in this README, Git
+commits, screenshots, or public messages.
 
-It is used by the NestJS application through the PrismaNeon driver adapter.
+## 9. Database Setup
 
-The pooled hostname normally contains `-pooler`.
+Prisma configuration is stored in `api/prisma7.config.ts`; the schema is
+in `api/prisma/schema.prisma`.
 
-**Direct Connection**
+Run these commands from the `api/` directory.
 
-`DATABASE_URL_UNPOOLED` uses the direct PostgreSQL connection endpoint.
+### Validate the schema
 
-It is used by Prisma CLI operations such as development migrations.
-
-The direct hostname does not contain `-pooler`.
-
-### Security
-
-Actual credentials must never be committed to version control.
-
-The `.env` file is excluded through Git ignore rules.
-
-The `.env.example` file is included in the repository to document the required environment variables without exposing credentials.
-
----
-
-## 13. Prisma Configuration
-
-Prisma configuration is maintained in:
-
-`api/prisma7.config.ts`
-
-The configuration defines:
-
-- Prisma schema location.
-- Migration directory.
-- Seed command.
-- Direct PostgreSQL connection URL.
-
-The Prisma schema is located at:
-
-`api/prisma/schema.prisma`
-
-### Prisma Client Generator
-
-The project uses the `prisma-client` generator with an explicitly configured output directory.
-
-The generated client is stored in:
-
-`api/src/generated/prisma`
-
-The application imports PrismaClient from this generated location.
-
-The Neon driver adapter is configured when Prisma Client is instantiated.
-
-### PrismaService
-
-The PrismaService is located at:
-
-`api/src/prisma/prisma.service.ts`
-
-It extends the generated PrismaClient and implements the NestJS lifecycle interfaces.
-
-The service:
-
-- Configures PrismaNeon.
-- Reads the pooled database connection from environment variables.
-- Establishes the database connection during module initialization.
-- Disconnects during application shutdown.
-
-### PrismaModule
-
-The PrismaModule is located at:
-
-`api/src/prisma/prisma.module.ts`
-
-It registers PrismaService as a provider and exports it for use by other NestJS modules.
-
-The root AppModule imports PrismaModule.
-
-
-**This project uses `prisma7.config.ts`, the Prisma configuration filename supported by Prisma 7.10 and later. The project retains this generated filename rather than introducing a second configuration file**
-
----
-
-## 14. Database Migrations
-
-Database migrations are managed through Prisma Migrate.
-
-Migrations provide a version-controlled history of changes made to the database schema.
-
-The initial migration is:
-
-`20261113105220_init`
-
-Location:
-
-`api/prisma/migrations/20261113105220_init/migration.sql`
-
-It creates:
-
-- The Role enum.
-- The User table.
-- The Genre table.
-- The Book table.
-- Unique indexes.
-- The Book-to-Genre foreign key.
-- The genreId index.
-
-### Validate the Schema
-
-```bash
-npx prisma validate
+``` powershell
+npx.cmd prisma validate
 ```
 
-### Format the Schema
+### Apply committed migrations
 
-```bash
-npx prisma format
+``` powershell
+npx.cmd prisma migrate deploy
 ```
+
+This applies the migration files in `api/prisma/migrations/` to the
+configured database.
 
 ### Generate Prisma Client
 
-```bash
-npx prisma generate
+``` powershell
+npx.cmd prisma generate
 ```
 
-### Check Migration Status
+### Seed the database
 
-```bash
-npx prisma migrate status
+``` powershell
+npx.cmd prisma db seed
 ```
 
-### Apply Existing Migrations to a New Database
+The seed script processes five genres, 21 catalogue books, and the
+environment-configured librarian account. Genre and book records use
+Prisma `upsert()` operations so repeated runs do not create duplicate
+seeded records. The librarian record is created or updated from the
+configured environment values.
 
-```bash
-npx prisma migrate deploy
+### Check migration status
+
+``` powershell
+npx.cmd prisma migrate status
 ```
 
-This applies committed migration files to the configured database.
+### Create a development migration
 
-### Create a New Development Migration
+After changing `prisma/schema.prisma`:
 
-When the Prisma schema is changed during development:
-
-```bash
-npx prisma migrate dev --name descriptive_migration_name
+``` powershell
+npx.cmd prisma migrate dev --name descriptive_migration_name
 ```
 
-Migration files should be committed to Git so that other development environments can reproduce the database structure.
+Commit the generated migration directory with the corresponding schema
+changes.
 
-The Prisma CLI uses the direct connection configured through `DATABASE_URL_UNPOOLED`.
+> Run migrations and seed commands only against the database environment
+> you intend to modify. Development work uses the configured Neon
+> development branch.
 
----
+## 10. Running the API
 
-## 15. Database Seeding
+Run commands from the `api/` directory. Ensure the environment variables
+are configured and the database is accessible.
 
-Database seeding populates the database with initial records required for development and testing.
+### Development mode
 
-The seed implementation is located at:
-
-`api/prisma/seed.ts`
-
-The seed script uses Prisma Client and the Neon driver adapter.
-
-### Seed Configuration
-
-The seed command is registered in the `migrations` section of `prisma7.config.ts`.
-
-The configured command is:
-
-```text
-tsx prisma/seed.ts
+``` powershell
+npm.cmd run start:dev
 ```
 
-### Execute the Seed Script
+The application runs in watch mode. The default local API address is:
 
-```bash
-npx prisma db seed
+``` text
+http://localhost:3000
 ```
 
-### Seed Dataset
+### Production build
 
-The initial dataset contains five genres and 21 books.
-
-| Genre | Number of Books |
-|---|---:|
-| African Literature | 5 |
-| Contemporary Fiction | 4 |
-| Fantasy | 4 |
-| Science Fiction | 4 |
-| Historical Fiction | 4 |
-| **Total** | **21** |
-
-### Seed Implementation Features
-
-The seed script:
-
-1. Establishes a Prisma database connection.
-2. Creates or updates the five genre records.
-3. Associates each book with its corresponding genre.
-4. Inserts or updates the 21 book records.
-5. Uses unique ISBNs to identify books.
-6. Uses genre slugs to identify genres.
-7. Disconnects Prisma Client when execution finishes.
-
-### Idempotency
-
-The seed script uses Prisma `upsert()` operations.
-
-An upsert checks whether a record already exists using its unique identifier.
-
-If the record exists, it is updated.
-
-If it does not exist, a new record is created.
-
-This allows the seed process to be executed repeatedly without creating duplicate seeded genres or books.
-
-### Verify Seeded Records
-
-Count the genres:
-
-```sql
-SELECT COUNT(*) AS total_genres
-FROM "Genre";
+``` powershell
+npm.cmd run build
 ```
 
-Count the books:
+### Production mode
 
-```sql
-SELECT COUNT(*) AS total_books
-FROM "Book";
+``` powershell
+npm.cmd run start:prod
 ```
 
-Inspect the genre distribution:
+## 11. API Reference
 
-```sql
-SELECT
-    g.name AS genre,
-    COUNT(b.id) AS total_books
-FROM "Genre" g
-LEFT JOIN "Book" b
-    ON b."genreId" = g.id
-GROUP BY g.id, g.name
-ORDER BY g.name;
+All endpoints are relative to:
+
+``` text
+http://localhost:3000
 ```
 
-Expected results:
+### Endpoint summary
 
-- Five genres.
-- Twenty-one books.
-- All books associated with their respective genres.
+  ------------------------------------------------------------------------
+  Method            Endpoint           Description       Access
+  ----------------- ------------------ ----------------- -----------------
+  `POST`            `/auth/register`   Register a patron Public
 
----
+  `POST`            `/auth/login`      Log in and        Public
+                                       receive a JWT     
 
-## 16. Running the Application
+  `GET`             `/books`           List, search,     Public
+                                       filter, and       
+                                       paginate books    
 
-Ensure that the environment variables are configured and the database is accessible.
+  `GET`             `/books/:id`       Retrieve a book   Public
 
-Navigate to the API directory:
+  `POST`            `/books`           Create a book     Librarian
 
-```bash
-cd api
+  `PATCH`           `/books/:id`       Update a book     Librarian
+
+  `DELETE`          `/books/:id`       Delete a book     Librarian
+
+  `GET`             `/genres`          List genres       Public
+
+  `GET`             `/genres/:id`      Retrieve a genre  Public
+
+  `POST`            `/genres`          Create a genre    Public in current
+                                                         implementation
+
+  `PATCH`           `/genres/:id`      Update a genre    Public in current
+                                                         implementation
+
+  `DELETE`          `/genres/:id`      Delete a genre    Public in current
+                                                         implementation
+  ------------------------------------------------------------------------
+
+**Authorization note:** Book write operations are protected by JWT
+authentication and the `LIBRARIAN` role. Genre routes are not currently
+protected by these guards. Do not assume genre write operations require
+librarian authentication.
+
+### 11.1 Authentication
+
+#### Register a patron
+
+``` http
+POST /auth/register
+Content-Type: application/json
 ```
 
-### Development Mode
+Example request:
 
-```bash
-npm run start:dev
+``` json
+{
+  "name": "Alex Patron",
+  "email": "alex@example.com",
+  "password": "StrongPassword123"
+}
 ```
 
-NestJS starts the application in watch mode.
+A successful registration returns `201 Created` with safe user
+information and an access token. The password hash is not returned.
+Public registration creates a `PATRON` account; it does not allow the
+client to select the `LIBRARIAN` role.
 
-Changes to application source files trigger recompilation.
+#### Log in
 
-The application listens on port 3000 by default.
-
-The configured port can be overridden using the `PORT` environment variable.
-
-### Production Build
-
-```bash
-npm run build
+``` http
+POST /auth/login
+Content-Type: application/json
 ```
 
-### Production Execution
+Example request:
 
-```bash
-npm run start:prod
+``` json
+{
+  "email": "alex@example.com",
+  "password": "StrongPassword123"
+}
 ```
 
-### Application Endpoint
+A successful login returns `200 OK` and a token response containing
+`accessToken`, `tokenType` (`Bearer`), `expiresIn` (one hour), and safe
+user information.
 
-The initial NestJS application exposes a root GET route:
+### 11.2 Books
 
-```text
-GET /
+#### List books
+
+``` http
+GET /books
 ```
 
-This route currently returns the initial application response.
+Query parameters:
 
-The book and catalogue CRUD endpoints are planned for subsequent development.
+  Parameter   Description
+  ----------- -------------------------------------------------
+  `search`    Case-insensitive search across title and author
+  `genreId`   Filter by genre ID
+  `page`      Page number; at least 1
+  `limit`     Page size; between 1 and 100
 
----
+Examples:
 
-## 17. Verification and Testing
-
-The following commands are available for project verification.
-
-### Schema Validation
-
-```bash
-npx prisma validate
+``` http
+GET /books
+GET /books?page=1&limit=10
+GET /books?search=Chinua
+GET /books?genreId=1
+GET /books?genreId=1&search=Chinua&page=1&limit=5
 ```
 
-### Migration Status
+The response includes matching book records and pagination metadata.
+Book results include related genre information. Search applies to title
+and author, not every property of a book.
 
-```bash
-npx prisma migrate status
+#### Retrieve a book
+
+``` http
+GET /books/1
 ```
 
-### Database Seeding
+#### Create a book
 
-```bash
-npx prisma db seed
+Requires a librarian bearer token.
+
+``` http
+POST /books
+Authorization: Bearer <LIBRARIAN_ACCESS_TOKEN>
+Content-Type: application/json
 ```
 
-### Application Build
+Example body:
 
-```bash
-npm run build
+``` json
+{
+  "title": "Example Library Book",
+  "author": "A. Writer",
+  "isbn": "9780000000000",
+  "totalCopies": 3,
+  "genreId": 1
+}
 ```
 
-### Unit Tests
+On creation, `availableCopies` is initialized to `totalCopies`.
 
-```bash
-npm run test
+#### Update a book
+
+Requires a librarian bearer token.
+
+``` http
+PATCH /books/1
+Authorization: Bearer <LIBRARIAN_ACCESS_TOKEN>
+Content-Type: application/json
 ```
 
-### Test Coverage
+Example body:
 
-```bash
-npm run test:cov
+``` json
+{
+  "title": "Updated Library Book",
+  "totalCopies": 5
+}
 ```
 
-### End-to-End Tests
+Only supplied fields are updated. When `totalCopies` changes, the
+current implementation synchronizes `availableCopies` to the new total.
+This is the current catalogue behavior; a future borrowing workflow will
+require more careful inventory transaction rules.
 
-```bash
-npm run test:e2e
+#### Delete a book
+
+Requires a librarian bearer token.
+
+``` http
+DELETE /books/1
+Authorization: Bearer <LIBRARIAN_ACCESS_TOKEN>
 ```
 
-### Linting
+### 11.3 Genres
 
-```bash
-npm run lint
+#### List genres
+
+``` http
+GET /genres
 ```
 
-### Security Audit
+Genre responses include the number of associated books.
 
-```bash
-npm audit
+#### Retrieve a genre
+
+``` http
+GET /genres/1
 ```
 
-A clean dependency audit should report zero known vulnerabilities.
+#### Create a genre
 
----
+``` http
+POST /genres
+Content-Type: application/json
+```
 
-## 18. Security Considerations
+Example body:
 
-The project follows basic security practices for backend and database development.
+``` json
+{
+  "name": "Mystery",
+  "slug": "mystery"
+}
+```
 
-### Environment Variables
+#### Update a genre
 
-- Database credentials are stored in `.env`.
-- Actual credentials are excluded from Git.
-- `.env.example` provides placeholder configuration.
-- Credentials should not be exposed in screenshots, documentation or source code.
+``` http
+PATCH /genres/1
+Content-Type: application/json
+```
 
-### Database Integrity
+Example body:
 
-- Primary keys uniquely identify records.
-- Unique constraints prevent duplicate identifiers.
-- Foreign keys enforce valid relationships.
-- Referential actions restrict deletion of genres that still contain books.
+``` json
+{
+  "name": "Mystery and Crime"
+}
+```
 
-### Dependency Security
+#### Delete a genre
 
-Dependencies are managed through npm.
+``` http
+DELETE /genres/1
+```
 
-The project uses `npm audit` to identify reported package vulnerabilities.
+A genre cannot be deleted while books still reference it. The API
+returns a conflict response in that situation.
 
-### Database Branching
+## 12. Authentication and Authorization
 
-Neon's development branch is separated from the parent production branch.
+The API uses JSON Web Tokens (JWT) and role-based access control.
 
-Development migrations and seed operations are performed against the development database.
+### Registration and password storage
 
-### Connection Management
+1.  A patron submits a name, email, and password.
+2.  The registration DTO validates and normalizes the input.
+3.  The password is hashed using bcrypt.
+4.  The user is stored with the `PATRON` role.
+5.  The response excludes the password hash.
 
-The application uses the Neon pooled connection through PrismaNeon, while Prisma CLI migration operations use the direct connection.
+The password validation flow enforces a minimum of 8 characters and a
+maximum of 72 characters.
 
----
+### Login
 
-## 19. Current Implementation Status
+1.  The user submits an email and password.
+2.  The service looks up the normalized email.
+3.  bcrypt compares the submitted password with the stored hash.
+4.  If valid, the service signs a JWT.
+5.  The client sends the token in the `Authorization` header for
+    protected routes.
 
-The following functionality has been currently implemented.
+### JWT header
 
-| Component | Status |
-|---|---|
-| NestJS backend scaffold | Completed |
-| TypeScript configuration | Completed |
-| Neon PostgreSQL provisioning | Completed |
-| Development database branch | Completed |
-| Prisma ORM integration | Completed |
-| Prisma Client generation | Completed |
-| Role enum | Completed |
-| User model | Completed |
-| Genre model | Completed |
-| Book model | Completed |
-| Book–Genre relationship | Completed |
-| Initial database migration | Completed |
-| PrismaService | Completed |
-| PrismaModule | Completed |
-| Database lifecycle integration | Completed |
-| Database seed configuration | Completed |
-| Five genre records | Completed |
-| Twenty-one book records | Completed |
-| Seed repeat-execution test | Completed |
-| Environment variable template | Completed |
-| Project documentation | Completed |
+``` http
+Authorization: Bearer <ACCESS_TOKEN>
+```
 
+The JWT strategy verifies the token using `JWT_SECRET` and makes the
+authenticated user's ID, email, and role available to the request.
+Tokens expire after one hour in the current implementation; the user
+must log in again to obtain a new token after expiry.
 
-Full catalogue CRUD operations, authentication and additional library management functionality remain part of subsequent development.
+### Roles
 
----
+-   `PATRON`: standard registered library user.
+-   `LIBRARIAN`: user permitted to perform protected book write
+    operations.
 
-## 20. Future Development
+The `@Roles()` decorator declares the required role. `RolesGuard` checks
+the authenticated user's role. Book creation, updating, and deletion use
+both `JwtAuthGuard` and `RolesGuard`.
 
-The database foundation is designed to support additional library functionality.
+### Expected access outcomes
 
-Planned development areas include:
+  -----------------------------------------------------------------------
+  Request                             Expected result
+  ----------------------------------- -----------------------------------
+  Unauthenticated request to          `401 Unauthorized`
+  protected book write route          
 
-### Book Management
+  Patron token on librarian-only book `403 Forbidden`
+  write route                         
 
-- Create new book records.
-- Retrieve book details.
-- Update book information.
-- Delete book records where appropriate.
-- Search and filter the catalogue.
-- Retrieve books by genre.
+  Valid librarian token on protected  Authorized
+  book write route                    
 
-### Genre Management
+  Public book or genre read request   No JWT required
+  -----------------------------------------------------------------------
 
-- Create and manage genres.
-- Retrieve genres.
-- Retrieve all books associated with a genre.
+## 13. Postman Collection
 
-### User Management
+An importable collection is included at:
 
-- Implement user registration and management.
-- Introduce authentication.
-- Apply role-based access control for patrons and librarians.
+``` text
+docs/postman_collection.json
+```
 
-### Library Inventory
+It contains requests for authentication and the book and genre
+endpoints.
 
-- Track total and available copies.
-- Implement borrowing and returning workflows.
-- Prevent invalid inventory updates.
+### Collection variables
 
-### Additional Functionality
+  -----------------------------------------------------------------------
+  Variable                            Purpose
+  ----------------------------------- -----------------------------------
+  `baseUrl`                           API base URL; defaults to
+                                      `http://localhost:3000`
 
-- Introduce a Review model.
-- Associate reviews with books and users.
-- Implement pagination and sorting.
-- Add API documentation.
-- Introduce automated integration tests.
+  `accessToken`                       JWT saved by the authentication
+                                      request scripts
 
-### Prisma vs. Document Database Modelling
+  `currentRole`                       Role associated with the most
+                                      recently authenticated user
+  -----------------------------------------------------------------------
 
-One difference I noticed when modelling this library database is how relationships are represented.
+The login and registration scripts save the returned token for use by
+protected book write requests.
 
-With Prisma and PostgreSQL, I define separate models and explicitly establish relationships using foreign keys...For example, Book references Genre through genreId.
+### Import instructions
 
-In a document database, related information can instead be embedded within a document thus reducing the need for separate lookups but may introduce data duplication.
+1.  Start the API.
+2.  Open Postman and select **Import**.
+3.  Select `docs/postman_collection.json`.
+4.  Open the **Library Management System API** collection.
+5.  Confirm `baseUrl` points to your running API.
+6.  Register or log in to obtain a token.
+7.  Use the librarian credentials configured in your local environment
+    to test protected book write operations.
 
-For this library catalogue, separating Genre from Book provides better consistency and allows PostgreSQL to enforce referential integrity.
+The collection documents current API behavior. Genre write routes are
+public in the current implementation.
 
----
+## 14. Validation and Error Handling
 
-## 21. Learning Resources
+The application configures a global NestJS `ValidationPipe` with
+transformation and whitelisting enabled. Request DTOs validate incoming
+data, and properties not declared in the DTO are not accepted as
+ordinary validated input.
 
-The following official resources support the technologies used in this project:
+Validation is applied to book and genre create/update requests,
+authentication requests, and book query parameters.
 
-### NestJS
+### Common HTTP outcomes
 
-- [NestJS Documentation](https://docs.nestjs.com/)
-- [NestJS Modules](https://docs.nestjs.com/modules)
-- [NestJS Providers](https://docs.nestjs.com/providers)
-- [NestJS Lifecycle Events](https://docs.nestjs.com/fundamentals/lifecycle-events)
+  Condition                                         Typical status
+  ------------------------------------------- --------------------
+  Successful resource creation                       `201 Created`
+  Successful retrieval or update                          `200 OK`
+  Invalid DTO input                              `400 Bad Request`
+  Missing resource                                 `404 Not Found`
+  Invalid login credentials                     `401 Unauthorized`
+  Missing or invalid JWT on protected route     `401 Unauthorized`
+  Insufficient role                                `403 Forbidden`
+  Duplicate unique value                            `409 Conflict`
+  Deleting a genre that still has books             `409 Conflict`
 
-### Prisma
+The exact response body is generated by the relevant NestJS exception
+handling.
 
-- [Prisma ORM Documentation](https://www.prisma.io/docs)
-- [Prisma Schema Reference](https://www.prisma.io/docs/orm/reference/prisma-schema-reference)
-- [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate)
-- [Prisma Seeding](https://www.prisma.io/docs/orm/prisma-migrate/workflows/seeding)
-- [Prisma Driver Adapters](https://www.prisma.io/docs/orm/core-concepts/supported-databases/database-drivers)
+## 15. Testing and Verification
 
-### PostgreSQL and Neon
+The implementation has been built and manually exercised against the
+development database and local API.
 
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Neon Documentation](https://neon.com/docs)
-- [Neon PostgreSQL Connections](https://neon.com/docs/connect/connect-from-any-app)
+### Build and dependency audit
 
-### Development Tools
+Run from `api/`:
 
-- [Node.js](https://nodejs.org/)
-- [TypeScript](https://www.typescriptlang.org/docs/)
-- [Git Documentation](https://git-scm.com/doc)
-- [GitHub Documentation](https://docs.github.com/)
+``` powershell
+npm.cmd run build
+npm.cmd audit
+```
 
----
+At the latest Session 2 verification: - `npm.cmd run build` completed
+successfully. - `npm.cmd audit` reported **0 vulnerabilities**.
 
-## Author and Repository
+Audit results describe the dependency state at the time they were run.
+Re-run the audit after dependency changes.
 
-**Repository:** [library-management-system](https://github.com/llavvy-design/library-management-system)
+### Manually verified API behavior
 
-**Project Focus:** Full Stack Engineering, Backend Development, Relational Database Design and ORM Integration.
+-   Listing genres and checking book counts.
+-   Creating, retrieving, updating, and deleting genres.
+-   Handling duplicate genre values.
+-   Rejecting deletion of a genre that still contains books.
+-   Listing books and checking pagination.
+-   Searching by title/author and filtering by genre.
+-   Combining search, genre filtering, and pagination.
+-   Creating, retrieving, updating, and deleting books.
+-   Initializing and synchronizing book copy counts.
+-   Rejecting duplicate ISBN values and invalid inventory input.
+-   Registering a patron and logging in.
+-   Confirming password hashes are not returned.
+-   Rejecting book write requests without a token.
+-   Rejecting patron access to librarian-only book write routes.
+-   Accepting librarian access to protected book write routes.
 
-**Development Approach:** Incremental implementation, documented architectural decisions, version-controlled migrations and reproducible database seeding.
+### Useful verification commands
+
+``` powershell
+npx.cmd prisma validate
+npx.cmd prisma migrate status
+npm.cmd run build
+npm.cmd audit
+```
+
+The repository contains NestJS test files. Automated test coverage
+should be evaluated separately; the manual API verification above is not
+a claim that every automated test suite has been run.
+
+## 16. Security Notes
+
+-   Store database connection strings and JWT secrets in `api/.env`.
+-   Never commit `.env` files or expose their values.
+-   Use `.env.example` as a template, not for real credentials.
+-   Use a strong, private `JWT_SECRET`.
+-   Passwords are stored as bcrypt hashes, not plaintext.
+-   Public registration creates patrons; it does not provide a public
+    way to assign the librarian role.
+-   Use the environment-configured librarian account for privileged book
+    operations.
+-   Keep dependencies updated and review `npm audit` results.
+-   Use the intended Neon development database when running development
+    migrations and seed commands.
+-   Do not expose production credentials in Postman screenshots or
+    shared collections.
+
+A temporary npm dependency override for `effect` was added to address a
+reported transitive dependency vulnerability in the installed Prisma
+dependency tree. Review this override when a compatible upstream
+dependency update makes it unnecessary.
+
+## 17. Current Implementation Status
+
+  Area                                    Status
+  --------------------------------------- ---------------------
+  NestJS application foundation           Complete
+  Prisma 7 and Neon integration           Complete
+  Prisma schema and migrations            Complete
+  Genre CRUD API                          Complete
+  Book CRUD API                           Complete
+  Book search by title and author         Complete
+  Genre filtering                         Complete
+  Book pagination                         Complete
+  Book and genre DTO validation           Complete
+  Global validation and CORS              Complete
+  Patron registration and login           Complete
+  bcrypt password hashing                 Complete
+  JWT strategy and authentication guard   Complete
+  Roles decorator and RolesGuard          Complete
+  Librarian-only book write operations    Complete
+  Environment-based librarian seeding     Complete
+  Postman collection                      Complete
+  Build verification                      Passed
+  npm audit at latest verification        0 vulnerabilities
+  Borrowing and returns workflow          Not yet implemented
+  Frontend application                    Not yet implemented
+
+### Assignment scope completed
+
+The current backend covers the catalogue and security requirements: -
+Genre CRUD. - Book CRUD. - Search, filtering, and pagination. - DTO
+validation. - Patron registration and login. - bcrypt password
+hashing. - JWT authentication. - Librarian role authorization for book
+create/update/delete. - Postman collection documenting the API
+endpoints.
+
+Optional profile and login rate-limiting features are not included in
+the current implementation.
+
+## 18. Planned Development
+
+The following are future development items, not completed features.
+
+### Borrowing and returns
+
+-   Create borrowing records.
+-   Associate a borrowing record with a patron and a book.
+-   Track borrowing dates and due dates.
+-   Process book returns.
+-   Update inventory safely when books are borrowed and returned.
+-   Prevent borrowing when no copies are available.
+-   Identify overdue loans.
+
+### User features
+
+-   User profile endpoint.
+-   Account management.
+-   Additional account and permission workflows.
+
+### Frontend
+
+-   Build a responsive interface for patrons and librarians.
+-   Display and search the book catalogue.
+-   Provide librarian management screens.
+-   Provide patron borrowing views after the borrowing module exists.
+
+### Further engineering improvements
+
+-   Add automated integration and end-to-end tests.
+-   Add API documentation, such as an OpenAPI/Swagger specification.
+-   Consider login rate limiting.
+-   Add structured logging and production monitoring.
+-   Review inventory update rules when transactional borrowing workflows
+    are introduced.
+
+## 19. Design Decisions
+
+### Why use a relational database?
+
+A library catalogue contains structured entities with clear
+relationships. PostgreSQL provides primary keys, unique constraints,
+foreign keys, and transactions that help preserve data integrity.
+
+### Why separate Genre and Book?
+
+A genre can classify many books. Storing the genre once and referencing
+it through `genreId` avoids repeating genre names in every book record.
+
+### Why use a Role enum?
+
+The `Role` enum restricts role values to `PATRON` and `LIBRARIAN`,
+giving the application a consistent basis for role checks.
+
+### Why use Prisma?
+
+Prisma provides schema-based data modelling, generated TypeScript types,
+migration tooling, and a structured way for NestJS services to access
+PostgreSQL.
+
+### Why use a Neon driver adapter?
+
+The PrismaNeon adapter connects Prisma Client to the hosted Neon
+PostgreSQL database. The application uses the pooled connection for
+runtime database access, while Prisma CLI operations use the direct
+connection configured for migrations.
+
+### Why separate controllers and services?
+
+Controllers focus on HTTP concerns, while services contain application
+logic and database operations. This separation makes features easier to
+maintain and test.
+
+### Why hash passwords?
+
+Passwords should not be stored as plaintext. The authentication service
+uses bcrypt to store password hashes and compare submitted passwords
+during login.
+
+### Why protect book write operations?
+
+Creating, updating, and deleting catalogue records are librarian
+responsibilities in the current authorization model. JWT authentication
+establishes the caller's identity, and the RolesGuard checks whether the
+caller has the required role.
+
+## 20. Learning Resources
+
+-   [NestJS Documentation](https://docs.nestjs.com/)
+-   [NestJS Modules](https://docs.nestjs.com/modules)
+-   [NestJS Controllers](https://docs.nestjs.com/controllers)
+-   [NestJS Providers](https://docs.nestjs.com/providers)
+-   [NestJS
+    Authentication](https://docs.nestjs.com/security/authentication)
+-   [Prisma Documentation](https://www.prisma.io/docs)
+-   [Prisma Schema
+    Reference](https://www.prisma.io/docs/orm/reference/prisma-schema-reference)
+-   [Prisma Migrate](https://www.prisma.io/docs/orm/prisma-migrate)
+-   [Prisma
+    Seeding](https://www.prisma.io/docs/orm/prisma-migrate/workflows/seeding)
+-   [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+-   [Neon Documentation](https://neon.com/docs)
+-   [Node.js Documentation](https://nodejs.org/docs/)
+-   [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+-   [Postman Learning Center](https://learning.postman.com/)
+
+## 21. Author and Repository
 
 **Author:** Lavine Lornah
 
+**Repository:**
+[library-management-system](https://github.com/llavvy-design/library-management-system)
+
+**Project focus:** Full Stack Software Engineering, backend development,
+REST API design, relational database modelling, authentication and
+authorization.
+
+**Development approach:** Incremental implementation, modular
+architecture, documented design decisions, version-controlled database
+migrations, reproducible database seeding, and manual API verification.
+
+------------------------------------------------------------------------
